@@ -1,0 +1,191 @@
+You are a senior full-stack + AI engineer working inside a single Replit workspace.
+
+Your task is to BUILD (not just design) a working prototype of an
+AI-Driven Sustainability Operating System called "SustainOS".
+
+This is a SYSTEMS project.
+Focus on correctness, clarity, and end-to-end flow.
+Avoid overengineering.
+
+=====================================================
+IMPORTANT CONSTRAINTS (FOLLOW STRICTLY)
+=====================================================
+
+1. Use ONE Replit workspace
+2. Use folder-based architecture
+3. Ensure all servers can run locally in Replit
+4. Mock data is allowed and encouraged
+5. Simplicity > accuracy > scale
+6. Everything must work with minimal setup
+
+=====================================================
+PROJECT STRUCTURE (CREATE THIS FIRST)
+=====================================================
+
+/
+├── frontend/        (React app)
+├── backend/         (Node.js + Express API)
+├── ai_service/      (Python AI microservice)
+├── README.md
+
+=====================================================
+SYSTEM GOAL
+=====================================================
+
+Build a Sustainability Operating System that:
+
+1. Accepts sustainability data (electricity, water)
+2. Predicts future demand
+3. Simulates sustainability policies ("what-if")
+4. Recommends optimized actions
+5. Explains decisions to administrators
+
+This is NOT a dashboard-only app.
+It is a decision-making engine with a UI.
+
+=====================================================
+FRONTEND REQUIREMENTS (React)
+=====================================================
+
+Inside /frontend:
+
+- Use React (Vite or CRA)
+- No authentication needed
+- Clean admin dashboard UI
+
+Pages to implement:
+
+1. Dashboard Page
+   - Show total electricity & water usage
+   - Show predicted vs actual usage (chart)
+   - Show peak usage warning text
+
+2. Policy Simulation Page
+   - Form inputs:
+     - AC temperature limit (number)
+     - Usage reduction percentage
+     - Incentive enabled (true/false)
+   - Submit policy for simulation
+   - Display returned results:
+     - Estimated cost savings
+     - Carbon reduction
+     - Comfort score (0 to 1)
+
+3. Recommendations Page
+   - List recommended actions
+   - Each item must show:
+     - Action
+     - Why it is recommended
+     - Expected impact
+
+Use:
+- React
+- Simple chart library (Chart.js / Recharts)
+- Fetch data from backend APIs
+
+=====================================================
+BACKEND REQUIREMENTS (Node.js + Express)
+=====================================================
+
+Inside /backend:
+
+- Use Node.js + Express
+- This backend is the ORCHESTRATOR
+- Do NOT implement ML here
+
+APIs to implement:
+
+1. POST /data/usage
+   - Accept mock time-series data
+   - Store in memory or simple JSON (Mongo optional)
+
+2. GET /forecast
+   - Call Python AI service
+   - Return predicted usage
+
+3. POST /simulate
+   - Accept policy parameters
+   - Forward request to Python AI service
+   - Return simulation results
+
+4. GET /recommendations
+   - Return AI-generated decisions
+
+The backend must communicate with the Python service via HTTP.
+
+=====================================================
+AI SERVICE REQUIREMENTS (Python)
+=====================================================
+
+Inside /ai_service:
+
+- Use Flask or FastAPI
+- This is the INTELLIGENCE LAYER
+
+Endpoints to implement:
+
+1. /forecast
+   - Input: historical usage
+   - Output: next-day and next-week prediction
+   - Use simple logic (moving average / regression)
+
+2. /simulate
+   - Input: policy parameters
+   - Simulate impact on:
+     - Resource usage
+     - Cost
+     - Carbon footprint
+     - Comfort score
+   - Use explainable heuristic formulas
+
+3. /recommend
+   - Compare multiple policies
+   - Choose best trade-off:
+     - Cost vs carbon vs comfort
+   - Return explanation in plain English
+
+IMPORTANT:
+- NO complex ML required
+- Focus on explainability
+- Logic must be easy to understand
+
+=====================================================
+DIGITAL TWIN & RL (SIMPLIFIED)
+=====================================================
+
+Implement a conceptual "digital twin":
+- Use historical data as environment
+- Test policy actions on it
+
+Reinforcement Learning can be mocked:
+- Iterative policy improvement loop
+- No RL libraries required
+
+=====================================================
+RUNNING IN REPLIT
+=====================================================
+
+- Ensure frontend, backend, and ai_service can run
+- Use different ports
+- Provide clear run instructions in README.md
+
+=====================================================
+DELIVERABLE
+=====================================================
+
+Produce:
+- Working frontend UI
+- Working backend APIs
+- Working AI service
+- End-to-end data flow
+- Clear comments
+- README with setup + explanation
+
+This prototype should clearly demonstrate:
+Prediction → Simulation → Recommendation → Explanation
+
+BEGIN BY:
+1. Creating folder structure
+2. Implementing backend
+3. Implementing AI service
+4. Connecting frontend
