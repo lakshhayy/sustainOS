@@ -1,5 +1,8 @@
-import { addDays, format, subDays } from "date-fns";
+import { addDays, format } from "date-fns";
 
+/**
+ * Represents a single point in time for resource usage.
+ */
 export interface UsageDataPoint {
   time: string;
   actualEnergy: number | null; // kWh
@@ -9,19 +12,28 @@ export interface UsageDataPoint {
   peakLimit: number;
 }
 
+/**
+ * Parameters for the sustainability policy simulation.
+ */
 export interface SimulationParams {
-  acTemp: number; // Celsius
-  reductionPercent: number; // 0-100
-  incentiveEnabled: boolean;
+  acTemp: number; // Celsius (Standard Indian AC setting range 18-30)
+  reductionPercent: number; // 0-100% load shedding
+  incentiveEnabled: boolean; // Participation in Discom Demand Response
 }
 
+/**
+ * Results returned by the AI simulation engine.
+ */
 export interface SimulationResult {
-  costSavings: number; // $
+  costSavings: number; // in INR (₹)
   carbonReduction: number; // kg CO2
-  comfortScore: number; // 0.0 - 1.0
+  comfortScore: number; // 0.0 (Poor) to 1.0 (Excellent)
   energySaved: number; // kWh
 }
 
+/**
+ * AI-generated recommendation for operational improvements.
+ */
 export interface Recommendation {
   id: string;
   action: string;
@@ -33,6 +45,10 @@ export interface Recommendation {
 
 // --- Mock Data Generators ---
 
+/**
+ * Generates mock historical and predicted data for the dashboard.
+ * Simulates a typical commercial building pattern in an Indian metro.
+ */
 const generateHistoricalData = (): UsageDataPoint[] => {
   const data: UsageDataPoint[] = [];
   const now = new Date();
@@ -43,20 +59,20 @@ const generateHistoricalData = (): UsageDataPoint[] => {
     const dateStr = format(date, "MMM dd");
     const isFuture = i > 0;
     
-    // Base patterns
-    const baseEnergy = 450 + Math.random() * 50;
-    const baseWater = 200 + Math.random() * 30;
+    // Base patterns (Higher base load due to cooling needs)
+    const baseEnergy = 850 + Math.random() * 100; 
+    const baseWater = 400 + Math.random() * 50;
     
-    // Trends
-    const energyTrend = Math.sin(i / 2) * 20;
+    // Trends: Sinusoidal wave to simulate weekly variance
+    const energyTrend = Math.sin(i / 2) * 50;
     
     data.push({
       time: dateStr,
       actualEnergy: isFuture ? null : Math.round(baseEnergy + energyTrend),
-      predictedEnergy: Math.round(baseEnergy + energyTrend + (Math.random() * 10 - 5)),
+      predictedEnergy: Math.round(baseEnergy + energyTrend + (Math.random() * 20 - 10)),
       actualWater: isFuture ? null : Math.round(baseWater),
-      predictedWater: Math.round(baseWater + (Math.random() * 5)),
-      peakLimit: 600,
+      predictedWater: Math.round(baseWater + (Math.random() * 10)),
+      peakLimit: 1100, // Peak limit in kWh
     });
   }
   return data;
@@ -64,60 +80,71 @@ const generateHistoricalData = (): UsageDataPoint[] => {
 
 export const MOCK_USAGE_DATA = generateHistoricalData();
 
+/**
+ * Curated list of recommendations tailored for Indian infrastructure.
+ */
 export const MOCK_RECOMMENDATIONS: Recommendation[] = [
   {
     id: "1",
-    action: "Shift HVAC Schedule",
-    reason: "Peak demand predicted between 2pm-4pm tomorrow.",
-    impact: "Save ~$450/month",
+    action: "Optimize AC Setpoint (BEE Guidelines)",
+    reason: "Bureau of Energy Efficiency recommends 24°C default.",
+    impact: "Save ~₹15,000/month",
     category: "energy",
     difficulty: "easy"
   },
   {
     id: "2",
-    action: "Install Smart Flow Sensors",
-    reason: "Water usage in Sector B is 15% above baseline.",
-    impact: "Detect leaks early",
+    action: "Rooftop Solar Integration",
+    reason: "High solar irradiance predicted for next 3 months.",
+    impact: "Offset 40% grid usage",
+    category: "energy",
+    difficulty: "hard"
+  },
+  {
+    id: "3",
+    action: "Rainwater Harvesting Check",
+    reason: "Monsoon season approaching; ensure catchment is clean.",
+    impact: "Water security bonus",
     category: "water",
     difficulty: "medium"
   },
   {
-    id: "3",
-    action: "Enable Demand Response",
-    reason: "Grid incentives active for next 48 hours.",
-    impact: "Earn $0.50 per kWh reduced",
+    id: "4",
+    action: "Shift to Off-Peak Hours",
+    reason: "Avoid peak tariff rates (6 PM - 10 PM).",
+    impact: "Reduce bill by 12%",
     category: "cost",
     difficulty: "easy"
-  },
-  {
-    id: "4",
-    action: "Upgrade Chillers to VFD",
-    reason: "Current chiller efficiency is degrading.",
-    impact: "Reduce baseload by 12%",
-    category: "energy",
-    difficulty: "hard"
   }
 ];
 
 // --- Mock Service Functions ---
 
+/**
+ * Simulates fetching usage data from a backend API.
+ */
 export const getUsageData = async (): Promise<UsageDataPoint[]> => {
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 800));
   return MOCK_USAGE_DATA;
 };
 
+/**
+ * Simulates the AI Engine processing a policy change.
+ * Uses heuristics to estimate impact on Cost (₹), Carbon, and Comfort.
+ */
 export const runSimulation = async (params: SimulationParams): Promise<SimulationResult> => {
   await new Promise(resolve => setTimeout(resolve, 1500));
   
   // Heuristic Simulation Logic (Mocking Python Service)
-  const baseCost = 5000;
-  const baseCarbon = 2000;
+  // Base monthly cost in INR
+  const baseCostINR = 450000; 
+  const baseCarbon = 2000; // kg
   
   // Impact of AC Temp (Higher is better for savings, worse for comfort)
-  // Baseline 22C. Each degree up saves ~5% energy.
+  // Baseline 22C. Each degree up saves ~5% energy (typical rule of thumb).
   const tempDiff = params.acTemp - 22;
-  const tempSavings = Math.max(0, tempDiff * 0.05);
+  const tempSavings = Math.max(0, tempDiff * 0.06); // Slightly higher savings in hot climate
   
   // Impact of Reduction %
   const manualSavings = params.reductionPercent / 100;
@@ -125,21 +152,25 @@ export const runSimulation = async (params: SimulationParams): Promise<Simulatio
   // Combined Savings Factor
   const totalSavingsFactor = tempSavings + manualSavings;
   
-  // Incentive Impact (Mock: Just flat bonus if enabled)
-  const incentiveBonus = params.incentiveEnabled ? 200 : 0;
+  // Incentive Impact (Mock: DISCOM rebate)
+  const incentiveBonus = params.incentiveEnabled ? 5000 : 0;
   
-  const costSavings = Math.round((baseCost * totalSavingsFactor) + incentiveBonus);
+  const costSavings = Math.round((baseCostINR * totalSavingsFactor) + incentiveBonus);
   const carbonReduction = Math.round(baseCarbon * totalSavingsFactor);
-  const energySaved = Math.round(1000 * totalSavingsFactor);
+  const energySaved = Math.round(2000 * totalSavingsFactor);
   
   // Comfort Score Calculation
-  // 22C is 1.0. 26C is 0.5.
+  // 24C is considered ideal balance in India (BEE). 
+  // > 26C starts getting uncomfortable.
   let comfortScore = 1.0;
-  if (params.acTemp > 22) {
-    comfortScore -= (params.acTemp - 22) * 0.12;
+  
+  // Penalize if temp goes too high
+  if (params.acTemp > 24) {
+    comfortScore -= (params.acTemp - 24) * 0.15;
   }
+  
   // Heavy reduction hurts comfort
-  comfortScore -= (params.reductionPercent / 200); 
+  comfortScore -= (params.reductionPercent / 150); 
   
   return {
     costSavings,
@@ -149,6 +180,9 @@ export const runSimulation = async (params: SimulationParams): Promise<Simulatio
   };
 };
 
+/**
+ * Fetches AI-generated recommendations.
+ */
 export const getRecommendations = async (): Promise<Recommendation[]> => {
   await new Promise(resolve => setTimeout(resolve, 600));
   return MOCK_RECOMMENDATIONS;

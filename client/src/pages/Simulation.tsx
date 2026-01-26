@@ -75,7 +75,7 @@ export default function Simulation() {
                       />
                     </FormControl>
                     <FormDescription>
-                      Higher temperatures reduce cooling load but may impact occupant comfort.
+                      BEE guidelines recommend 24°C as the ideal default setting for Indian commercial spaces.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -88,7 +88,7 @@ export default function Simulation() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex justify-between">
-                        <span>Target Load Reduction (%)</span>
+                        <span>Peak Load Reduction (%)</span>
                         <span className="font-mono text-muted-foreground">{field.value}%</span>
                     </FormLabel>
                     <FormControl>
@@ -102,7 +102,7 @@ export default function Simulation() {
                       />
                     </FormControl>
                     <FormDescription>
-                      Aggressiveness of load shedding protocols during peak hours.
+                      Percentage of non-critical load (signage, decorative lighting) to shed during peak hours.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -115,9 +115,9 @@ export default function Simulation() {
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-muted/20">
                     <div className="space-y-0.5">
-                      <FormLabel>Grid Incentive Program</FormLabel>
+                      <FormLabel>DISCOM Incentive Program</FormLabel>
                       <FormDescription>
-                        Participate in local utility demand response events.
+                        Opt-in for local utility demand response rebates.
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -134,12 +134,12 @@ export default function Simulation() {
                 {mutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Running Simulation...
+                    Calculating Impact...
                   </>
                 ) : (
                   <>
                     <Zap className="mr-2 h-4 w-4" />
-                    Run Simulation
+                    Run Policy Simulation
                   </>
                 )}
               </Button>
@@ -156,7 +156,7 @@ export default function Simulation() {
                     <ArrowRight className="w-8 h-8 opacity-20" />
                 </div>
                 <h3 className="font-heading font-medium text-lg">Ready to Simulate</h3>
-                <p>Enter policy parameters and run the simulation to see AI-predicted impacts.</p>
+                <p>Adjust parameters to see projected savings in INR (₹) and carbon reduction.</p>
             </div>
         )}
 
@@ -167,7 +167,7 @@ export default function Simulation() {
                         <CardTitle className="text-white/90">Projected Monthly Savings</CardTitle>
                     </CardHeader>
                     <CardContent className="flex items-baseline gap-2">
-                        <span className="text-5xl font-bold font-heading">${result.costSavings.toLocaleString()}</span>
+                        <span className="text-5xl font-bold font-heading">₹{result.costSavings.toLocaleString('en-IN')}</span>
                         <span className="text-emerald-100">est.</span>
                     </CardContent>
                  </Card>

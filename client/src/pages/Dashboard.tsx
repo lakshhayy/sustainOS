@@ -35,7 +35,7 @@ export default function Dashboard() {
             <ZapIcon className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-heading">{latestData?.actualEnergy ?? 450} kWh</div>
+            <div className="text-2xl font-bold font-heading">{latestData?.actualEnergy ?? 850} kWh</div>
             <p className="text-xs text-muted-foreground flex items-center mt-1">
               <TrendingDown className="w-3 h-3 mr-1 text-emerald-600" />
               -2.1% from yesterday
@@ -49,7 +49,7 @@ export default function Dashboard() {
             <Droplets className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-heading">{latestData?.actualWater ?? 210} L</div>
+            <div className="text-2xl font-bold font-heading">{latestData?.actualWater ?? 410} L</div>
             <p className="text-xs text-muted-foreground flex items-center mt-1">
               <TrendingUp className="w-3 h-3 mr-1 text-amber-500" />
               +4.3% from yesterday
@@ -59,13 +59,13 @@ export default function Dashboard() {
 
         <Card className="shadow-sm border-border/60 bg-gradient-to-br from-white to-lime-50/50 dark:from-sidebar dark:to-sidebar/50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Efficiency Score</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Efficiency Grade (BEE)</CardTitle>
             <Leaf className="h-4 w-4 text-lime-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-heading">A-</div>
+            <div className="text-2xl font-bold font-heading">4 Star</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Top 15% of similar facilities
+              Top 15% of similar facilities in region
             </p>
           </CardContent>
         </Card>
@@ -77,7 +77,7 @@ export default function Dashboard() {
           <AlertTriangle className="h-4 w-4 !text-amber-600" />
           <AlertTitle className="text-amber-800 dark:text-amber-300">Peak Usage Warning</AlertTitle>
           <AlertDescription className="text-amber-700 dark:text-amber-400">
-            Predicted energy usage for tomorrow exceeds the 550 kWh threshold. Consider enabling demand response protocols.
+            Predicted energy usage for tomorrow exceeds the 1100 kWh threshold. Consider enabling demand response protocols to avoid peak tariff surcharges.
           </AlertDescription>
         </Alert>
       )}
@@ -123,7 +123,7 @@ export default function Dashboard() {
                     boxShadow: "var(--shadow-lg)"
                 }}
               />
-              <ReferenceLine y={600} label="Peak Limit" stroke="hsl(var(--destructive))" strokeDasharray="3 3" />
+              <ReferenceLine y={1100} label="Grid Limit" stroke="hsl(var(--destructive))" strokeDasharray="3 3" />
               
               <Area 
                 type="monotone" 
