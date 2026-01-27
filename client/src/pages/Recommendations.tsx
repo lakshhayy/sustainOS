@@ -1,14 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
-import { getRecommendations } from "@/lib/mockData";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Check, ArrowRight, Zap, Droplets, DollarSign, Thermometer } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface Recommendation {
+  id: string;
+  action: string;
+  reason: string;
+  impact: string;
+  category: "energy" | "water" | "cost" | "comfort";
+  difficulty: "easy" | "medium" | "hard";
+}
 
 export default function Recommendations() {
-  const { data: recommendations, isLoading } = useQuery({
-    queryKey: ["recommendations"],
-    queryFn: getRecommendations,
+  // CONNECTED: Fetches from GET /api/recommendations
+  const { data: recommendations, isLoading } = useQuery<Recommendation[]>({
+    queryKey: ["/api/recommendations"],
   });
 
   const getIcon = (category: string) => {
@@ -39,7 +48,7 @@ export default function Recommendations() {
       <div className="grid gap-4">
         {isLoading ? (
              [1, 2, 3].map(i => (
-                <div key={i} className="h-32 rounded-xl bg-sidebar animate-pulse" />
+                <Skeleton key={i} className="h-32 rounded-xl bg-sidebar" />
               ))
         ) : (
             recommendations?.map((rec) => (

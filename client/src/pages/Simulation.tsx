@@ -3,15 +3,23 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation } from "@tanstack/react-query";
-import { runSimulation, SimulationResult } from "@/lib/mockData";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { apiRequest } from "@/lib/queryClient";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, ArrowRight, DollarSign, Leaf, Thermometer, Zap } from "lucide-react";
+import { Loader2, ArrowRight, Leaf, Thermometer, Zap } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+
+// Matches backend interface
+interface SimulationResult {
+  costSavings: number;
+  carbonReduction: number;
+  comfortScore: number;
+  energySaved: number;
+}
 
 const formSchema = z.object({
   acTemp: z.number().min(18).max(30),
@@ -21,6 +29,7 @@ const formSchema = z.object({
 
 export default function Simulation() {
   const [result, setResult] = useState<SimulationResult | null>(null);
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -31,11 +40,26 @@ export default function Simulation() {
     },
   });
 
+  // CONNECTED: Sends POST to /api/simulate
   const mutation = useMutation({
-    mutationFn: runSimulation,
+    mutationFn: async (values: z.infer<typeof formSchema>) => {
+      const res = await apiRequest("POST", "/api/simulate", values);
+      return await res.json();
+    },
     onSuccess: (data) => {
       setResult(data);
+      toast({
+        title: "Simulation Complete",
+        description: "AI Engine has processed the policy parameters.",
+      });
     },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to run simulation. Please try again.",
+        variant: "destructive",
+      });
+    }
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
@@ -49,7 +73,7 @@ export default function Simulation() {
         <CardHeader>
           <CardTitle>Policy Simulator</CardTitle>
           <CardDescription>
-            Adjust parameters to simulate environmental and cost impacts using the AI engine.
+            Adjust parameters to simulate environmental and cost impacts using the Server-Side AI engine.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -134,7 +158,7 @@ export default function Simulation() {
                 {mutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Calculating Impact...
+                    Processing with AI Engine...
                   </>
                 ) : (
                   <>

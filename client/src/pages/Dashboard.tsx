@@ -1,29 +1,38 @@
 import { useQuery } from "@tanstack/react-query";
-import { getUsageData } from "@/lib/mockData";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, TrendingUp, TrendingDown, Leaf, Droplets } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface UsageData {
+  time: string;
+  actualEnergy: number | null;
+  predictedEnergy: number | null;
+  actualWater: number | null;
+  predictedWater: number | null;
+}
 
 export default function Dashboard() {
-  const { data: usageData, isLoading } = useQuery({
-    queryKey: ["usageData"],
-    queryFn: getUsageData,
+  // CONNECTED: Fetches from GET /api/dashboard
+  const { data: usageData, isLoading } = useQuery<UsageData[]>({
+    queryKey: ["/api/dashboard"],
   });
 
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[1, 2, 3].map(i => (
-          <div key={i} className="h-32 rounded-xl bg-sidebar animate-pulse" />
+          <Skeleton key={i} className="h-32 rounded-xl bg-sidebar" />
         ))}
-        <div className="col-span-full h-96 rounded-xl bg-sidebar animate-pulse" />
+        <Skeleton className="col-span-full h-96 rounded-xl bg-sidebar" />
       </div>
     );
   }
 
-  const latestData = usageData ? usageData[usageData.length - 3] : null; // Getting current day (approx)
-  const isPeakWarning = latestData && latestData.predictedEnergy > 550;
+  // Calculate metrics based on the last real data point
+  const latestData = usageData ? usageData[usageData.length - 3] : null; 
+  const isPeakWarning = latestData && (latestData.predictedEnergy || 0) > 1000;
 
   return (
     <div className="space-y-6">
@@ -35,7 +44,7 @@ export default function Dashboard() {
             <ZapIcon className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-heading">{latestData?.actualEnergy ?? 850} kWh</div>
+            <div className="text-2xl font-bold font-heading">{latestData?.actualEnergy ?? "--"} kWh</div>
             <p className="text-xs text-muted-foreground flex items-center mt-1">
               <TrendingDown className="w-3 h-3 mr-1 text-emerald-600" />
               -2.1% from yesterday
@@ -49,7 +58,7 @@ export default function Dashboard() {
             <Droplets className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-heading">{latestData?.actualWater ?? 410} L</div>
+            <div className="text-2xl font-bold font-heading">{latestData?.actualWater ?? "--"} L</div>
             <p className="text-xs text-muted-foreground flex items-center mt-1">
               <TrendingUp className="w-3 h-3 mr-1 text-amber-500" />
               +4.3% from yesterday
@@ -77,7 +86,7 @@ export default function Dashboard() {
           <AlertTriangle className="h-4 w-4 !text-amber-600" />
           <AlertTitle className="text-amber-800 dark:text-amber-300">Peak Usage Warning</AlertTitle>
           <AlertDescription className="text-amber-700 dark:text-amber-400">
-            Predicted energy usage for tomorrow exceeds the 1100 kWh threshold. Consider enabling demand response protocols to avoid peak tariff surcharges.
+            Predicted energy usage for tomorrow exceeds the 1000 kWh threshold. Consider enabling demand response protocols to avoid peak tariff surcharges.
           </AlertDescription>
         </Alert>
       )}
@@ -86,7 +95,7 @@ export default function Dashboard() {
       <Card className="shadow-sm border-border/60 overflow-hidden">
         <CardHeader>
           <CardTitle>Energy Demand Forecast</CardTitle>
-          <CardDescription>Actual vs Predicted usage over the last 7 days + 48h forecast</CardDescription>
+          <CardDescription>Actual vs Predicted usage over the last 30 days + 48h forecast</CardDescription>
         </CardHeader>
         <CardContent className="h-[400px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -124,7 +133,7 @@ export default function Dashboard() {
                 }}
               />
               <ReferenceLine y={1100} label="Grid Limit" stroke="hsl(var(--destructive))" strokeDasharray="3 3" />
-              
+
               <Area 
                 type="monotone" 
                 dataKey="predictedEnergy" 
