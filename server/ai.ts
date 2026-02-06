@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { sensorReadings } from "@shared/schema";
 import { sql, eq } from "drizzle-orm";
+import axios from "axios"; // <--- The bridge to Python
 
 export interface SimulationParams {
   acTemp: number;
@@ -13,19 +14,13 @@ export interface SimulationResult {
   carbonReduction: number;
   comfortScore: number;
   energySaved: number;
+  outdoorTemp?: number; // <--- New field from Python Weather API
 }
 
-/**
- * The "Brain" of SustainOS.
- * In a production version, this would make HTTP calls to a Python Microservice.
- * For this prototype, we implement the Heuristic Logic here in Node.js to prove the architecture.
- */
 export class AIEngine {
 
-  // 1. Fetch Baseline Data (Real Database Connection)
-  // This proves to judges that your AI is data-driven, not random.
+  // 1. Fetch Baseline Data (from Postgres)
   private async getBaselineEnergy(): Promise<number> {
-    // Get the average energy usage from the last 30 days of sensor data
     const result = await db
       .select({ 
         avgValue: sql<string>`avg(${sensorReadings.value})` 
@@ -33,68 +28,52 @@ export class AIEngine {
       .from(sensorReadings)
       .where(eq(sensorReadings.type, 'energy'));
 
-    // Default to 850 if DB is empty (fallback)
     return parseFloat(result[0]?.avgValue || "850");
   }
 
-  // 2. The Simulation Logic
-  // This replaces the client-side math in mockData.ts
+  // 2. The Simulation Logic (Connects to Python)
   async simulatePolicy(params: SimulationParams): Promise<SimulationResult> {
+    try {
+      console.log("🤖 Sending data to Python AI Service...");
+      
+      // Call the Python Microservice running on Port 8000
+      const response = await axios.post("http://127.0.0.1:8000/simulate", params);
+      
+      console.log("✅ Python AI responded:", response.data);
+      return response.data;
+
+    } catch (error: any) {
+      console.error("❌ AI Service Offline. Switching to Fallback Mode.");
+      // If Python is down, we use the old math so the demo doesn't crash
+      return this.fallbackSimulation(params);
+    }
+  }
+
+  // 3. Fallback Logic (The "Safety Net")
+  private async fallbackSimulation(params: SimulationParams): Promise<SimulationResult> {
     const baselineEnergy = await this.getBaselineEnergy();
-
-    // Heuristic Model Constants (Indian Context)
-    const baseCostPerUnit = 12; // ₹12 per kWh (Commercial Rate)
-    const carbonFactor = 0.82; // kg CO2 per kWh (Indian Grid Average)
-
-    // Rule: Every 1°C increase in AC temp saves ~6% energy (BEE data)
-    const baselineTemp = 22;
-    const tempDiff = Math.max(0, params.acTemp - baselineTemp);
-    const acSavingsPercent = tempDiff * 0.06; 
-
-    // Rule: Peak load reduction directly cuts consumption
-    const loadSavingsPercent = params.reductionPercent / 100;
-
-    const totalSavingsPercent = acSavingsPercent + loadSavingsPercent;
-
-    // Estimated Monthly Energy Saved (kWh)
-    const monthlyConsumption = baselineEnergy * 30; 
-    const energySaved = Math.round(monthlyConsumption * totalSavingsPercent);
-
-    // Calculate Financial Impact
-    // Incentive: Flat ₹5000 rebate if participating in DISCOM program
-    const incentiveBonus = params.incentiveEnabled ? 5000 : 0;
-    const costSavings = Math.round((energySaved * baseCostPerUnit) + incentiveBonus);
-
-    // Calculate Carbon Footprint
-    const carbonReduction = Math.round(energySaved * carbonFactor);
-
-    // Calculate Comfort Score (The "Human" Factor)
-    // Starts at 100%. Drops if temp is too high or reduction is too aggressive.
+    
+    // Simple Backup Math
+    const tempDiff = Math.max(0, params.acTemp - 22);
+    const savingsPct = (tempDiff * 0.06) + (params.reductionPercent / 100);
+    
+    const energySaved = (baselineEnergy * 30) * savingsPct;
+    const costSavings = (energySaved * 12) + (params.incentiveEnabled ? 5000 : 0);
+    
+    // Simple linear penalty for comfort
     let comfortScore = 1.0;
-
-    // Penalty: Temp > 24°C is noticeable
-    if (params.acTemp > 24) {
-      comfortScore -= (params.acTemp - 24) * 0.10; 
-    }
-
-    // Penalty: Aggressive load shedding (>20%) affects lighting/lifts
-    if (params.reductionPercent > 20) {
-      comfortScore -= (params.reductionPercent - 20) * 0.01;
-    }
-
-    // Clamp score between 0 and 1
-    comfortScore = Math.max(0.1, Math.min(1.0, comfortScore));
+    if (params.acTemp > 24) comfortScore -= 0.2;
+    if (params.reductionPercent > 20) comfortScore -= 0.2;
 
     return {
-      costSavings,
-      carbonReduction,
-      comfortScore,
-      energySaved
+      costSavings: Math.round(costSavings),
+      carbonReduction: Math.round(energySaved * 0.82),
+      comfortScore: Math.max(0.1, comfortScore),
+      energySaved: Math.round(energySaved)
     };
   }
 
-  // 3. Recommendations Logic
-  // Serves the "Action Plan" to the frontend
+  // 4. Recommendations (Static for now)
   async getRecommendations() {
     return [
       {

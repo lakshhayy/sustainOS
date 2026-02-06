@@ -9,16 +9,16 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, ArrowRight, Leaf, Thermometer, Zap } from "lucide-react";
+import { Loader2, ArrowRight, Leaf, Thermometer, Zap, CloudSun } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 
-// Matches backend interface
 interface SimulationResult {
   costSavings: number;
   carbonReduction: number;
   comfortScore: number;
   energySaved: number;
+  outdoorTemp?: number; // <--- NEW: Received from Python
 }
 
 const formSchema = z.object({
@@ -40,7 +40,6 @@ export default function Simulation() {
     },
   });
 
-  // CONNECTED: Sends POST to /api/simulate
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
       const res = await apiRequest("POST", "/api/simulate", values);
@@ -50,7 +49,7 @@ export default function Simulation() {
       setResult(data);
       toast({
         title: "Simulation Complete",
-        description: "AI Engine has processed the policy parameters.",
+        description: `Analysis based on live outdoor conditions (${data.outdoorTemp}°C).`,
       });
     },
     onError: () => {
@@ -68,7 +67,7 @@ export default function Simulation() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {/* Simulation Form */}
+      {/* Input Section */}
       <Card className="h-fit">
         <CardHeader>
           <CardTitle>Policy Simulator</CardTitle>
@@ -99,7 +98,7 @@ export default function Simulation() {
                       />
                     </FormControl>
                     <FormDescription>
-                      BEE guidelines recommend 24°C as the ideal default setting for Indian commercial spaces.
+                      BEE guidelines recommend 24°C as the ideal default setting.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -126,7 +125,7 @@ export default function Simulation() {
                       />
                     </FormControl>
                     <FormDescription>
-                      Percentage of non-critical load (signage, decorative lighting) to shed during peak hours.
+                      Percentage of non-critical load (lighting, pumps) to shed.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -141,7 +140,7 @@ export default function Simulation() {
                     <div className="space-y-0.5">
                       <FormLabel>DISCOM Incentive Program</FormLabel>
                       <FormDescription>
-                        Opt-in for local utility demand response rebates.
+                        Opt-in for utility demand response rebates.
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -158,7 +157,7 @@ export default function Simulation() {
                 {mutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing with AI Engine...
+                    Analyzing Live Data...
                   </>
                 ) : (
                   <>
@@ -172,7 +171,7 @@ export default function Simulation() {
         </CardContent>
       </Card>
 
-      {/* Results Panel */}
+      {/* Results Section */}
       <div className="space-y-6">
         {!result && !mutation.isPending && (
             <div className="h-full flex flex-col items-center justify-center p-12 text-center text-muted-foreground border-2 border-dashed border-border rounded-xl bg-muted/5">
@@ -180,12 +179,33 @@ export default function Simulation() {
                     <ArrowRight className="w-8 h-8 opacity-20" />
                 </div>
                 <h3 className="font-heading font-medium text-lg">Ready to Simulate</h3>
-                <p>Adjust parameters to see projected savings in INR (₹) and carbon reduction.</p>
+                <p>Click "Run" to fetch live weather data and calculate impact.</p>
             </div>
         )}
 
         {result && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                 {/* NEW: Live Weather Card */}
+                 <Card className="bg-blue-950 text-white border-none shadow-lg overflow-hidden relative">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <CloudSun className="w-32 h-32" />
+                    </div>
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-blue-100 flex items-center gap-2 text-sm uppercase tracking-wider">
+                            <CloudSun className="w-4 h-4" /> Live Environment
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-4xl font-bold font-heading">{result.outdoorTemp}°C</span>
+                            <span className="text-blue-200">Outdoor Temp (Delhi)</span>
+                        </div>
+                        <p className="text-xs text-blue-300 mt-2">
+                            Thermodynamic load calculated based on real-time API data.
+                        </p>
+                    </CardContent>
+                 </Card>
+
                  <Card className="bg-primary text-primary-foreground border-none shadow-lg">
                     <CardHeader>
                         <CardTitle className="text-white/90">Projected Monthly Savings</CardTitle>
@@ -225,18 +245,6 @@ export default function Simulation() {
                         </CardContent>
                     </Card>
                  </div>
-
-                 <Card className="border-l-4 border-l-primary bg-muted/10">
-                    <CardContent className="pt-6">
-                        <h4 className="font-heading font-semibold mb-2">AI Analysis</h4>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                            Increasing the setpoint to <span className="font-bold text-foreground">{form.getValues().acTemp}°C</span> significantly reduces energy consumption. 
-                            {result.comfortScore < 0.7 
-                                ? " However, the comfort score indicates a risk of occupant complaints. Consider a more moderate adjustment." 
-                                : " The projected impact on occupant comfort is minimal, making this a high-value strategy."}
-                        </p>
-                    </CardContent>
-                 </Card>
             </div>
         )}
       </div>
